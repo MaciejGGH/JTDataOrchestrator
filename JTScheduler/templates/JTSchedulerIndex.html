@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<link rel="shortcut icon" href="">
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function() {
+
+        $("#refresh_log").click(function(e) {
+          $.ajax({
+            type: "POST",
+            url: "/"
+          })
+           .done(function(string) {
+            $("#fileList").html(string);		  
+		  console.log(string);
+          e.preventDefault();
+			});		
+		});
+      });
+    </script>
+  </head>
+  <body>
+      <button id="refresh_log">Refresh</button>
+	  <div id="fileList">
+		<ul>
+			{% for file in affectedFiles %}
+			<li>{{ file }}</li>
+			{% endfor %}
+		</ul>
+	  </div>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="/static/css/style.css" rel="stylesheet">
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function() {
+
+        $("#refresh_log").click(function(e) {
+          $.ajax({
+            type: "GET",
+            url: "/"
+          })
+          .done(function() {
+            alert("Replaced!");
+          });
+          e.preventDefault();
+        });
+		
+      });
+    </script>
+  </head>
+  <body>
+      <button id="refresh_log">Refresh</button>
+	  <div id="fileList">
+		<ul>
+			{% for file in affectedFiles %}
+			<li>{{ file }}</li>
+			{% endfor %}
+		</ul>
+	  </div>
+  </body>
+</html>
