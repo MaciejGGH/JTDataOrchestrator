@@ -3,6 +3,7 @@
 from zeep import Client
 
 
+
 class InfaWSHClient():
     
     def __init__(self,infaDomain,infaRepo,infaIntegrationService,infaUserName,infaUserPassword,infaSecurityDomain,MetadataWSDL,DataIntegrationWSDL):
@@ -22,7 +23,7 @@ class InfaWSHClient():
         
       
 
-    def startWorkflow(self,infaFolder,infaWorkflowName,infaWorkflowRunId='',infaWorkflowRunInstanceName=''):
+    def startWorkflow(self,infaFolder,infaWorkflowName,infaWorkflowRunId='',infaWorkflowRunInstanceName='',infaParameterFileName='',infaParameters=''):
                 
         self.dataIntegration.service.startWorkflow(_soapheaders=[self.soapHeader],
                                                    DIServiceInfo = {'ServiceName':self.infaIntegrationService,
@@ -30,13 +31,14 @@ class InfaWSHClient():
                                                    FolderName=infaFolder,
                                                    WorkflowName=infaWorkflowName,
                                                    WorkflowRunId=infaWorkflowRunId,
-                                                   WorkflowRunInstanceName=infaWorkflowRunInstanceName,
+                                                   WorkflowRunInstanceName=infaWorkflowRunInstanceName,                                                                
+                                                   ParameterFileName=infaParameterFileName,
+                                                   Parameters=[infaParameters],
                                                    RequestMode='NORMAL',
                                                    IsAbort='false')
         
-        result = self.getWorkflowDetails(infaFolder,infaWorkflowName,infaWorkflowRunId,infaWorkflowRunInstanceName)
-        
-        return result 
+        #result = self.getWorkflowDetails(infaFolder,infaWorkflowName,infaWorkflowRunId,infaWorkflowRunInstanceName)        
+        #return result 
     
     
     def getWorkflowDetails(self,infaFolder,infaWorkflowName,infaWorkflowRunId='',infaWorkflowRunInstanceName=''):
@@ -47,7 +49,7 @@ class InfaWSHClient():
                                                                  FolderName=infaFolder,
                                                                  WorkflowName=infaWorkflowName,
                                                                  WorkflowRunId=infaWorkflowRunId,
-                                                                 WorkflowRunInstanceName=infaWorkflowRunInstanceName,
+                                                                 WorkflowRunInstanceName=infaWorkflowRunInstanceName,                                                                 
                                                                  RequestMode='NORMAL',
                                                                  IsAbort='false'
                                                                  )
@@ -75,7 +77,7 @@ class InfaWSHClient():
     
     def logout(self):
         
-        result = self.metadata.service.logout(_soapheaders=[self.soapHeader])
+         self.metadata.service.logout(_soapheaders=[self.soapHeader])
 
 
 
@@ -85,7 +87,6 @@ class InfaWSHClient():
 
 
 '''
-
 x = InfaWSHClient(infaDomain='Domain_DESKTOP-JTBO5ON',
                   infaRepo='infa_repo',
                   infaIntegrationService='infa_is',
@@ -95,26 +96,16 @@ x = InfaWSHClient(infaDomain='Domain_DESKTOP-JTBO5ON',
                   infaUserPassword='admin',
                   infaSecurityDomain='Native')
 
-a = x.startWorkflow(infaFolder='folder',infaWorkflowName='wf_iWSH')  
 
-x.logout()
-#a  = x.getWorkflowDetails(infaFolder='folder',infaWorkflowName='wf_iWSH')
+inParams = {'Parameters':[{'Scope':'global',
+                           'Name':'$$VAR1',
+                           'Value':'thisismeVAR1'},
+                          {'Scope':'global',
+                           'Name':'$$VAR2',
+                           'Value':'thisismeVAR2'}
+                          ]}
 
-#a = x.getAllFolders()
-print(a)
+a = x.startWorkflow(infaFolder='folder',infaWorkflowName='wf_iWSH',infaParameters=inParams) 
+a = x.getWorkflowDetails(infaFolder='folder',infaWorkflowName='wf_iWSH')
 
-
-
-status = 'RUNNING'
-
-while status == 'RUNNING':
-    time.sleep(5)
-    status = x.getWorkflowStatus(infaFolder='folder',infaWorkflow='wf_iWSH')
-    print('Workflow {0}, time: {1}'.format(status, time.asctime()))     
-    
-x.disconnect()
-
-infaWSH.py
-Open with Google Docs
-Displaying infaWSH.py.
-'''
+''' 
