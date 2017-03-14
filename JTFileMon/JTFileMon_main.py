@@ -55,7 +55,7 @@ class MyEventHandler(FileSystemEventHandler):
                 affectedFile = event.src_path.encode('utf-8')
                 print '{1} {0}'.format(event.event_type, affectedFile)
         r = s.put(schedulerServiceAddress, params={'fileName': affectedFile})
-        #print r.status_code, r.text
+        print r.status_code, r.text
 
 def main():
     logging.basicConfig(level=logging.INFO,
