@@ -19,28 +19,27 @@ from watchdog.events import LoggingEventHandler, FileSystemEventHandler
 import ConfigParser
 from os.path import join, dirname
 
-dir = dirname(__file__)
-configFileName = join(dir, r'cfg\filewatcher.cfg')
-try:
-    configReady = False
-    #config = ConfigParser.SafeConfigParser()
-    #Forcing parser to reuse existing letter case
-    config = ConfigParser.RawConfigParser()
-    config.optionxform = lambda option: option
-    config.read(configFileName)
-    sourceDir = config.get('Common', 'SourceDir')
-    schedulerServiceAddress = config.get('Common', 'SchedulerWebAddress')
-    configReady = True
-
-except Exception as e:
-    print e
-#todo: check if path exists
-print 'Monitorig started for path: {0}'.format(sourceDir)
-print 'Ctrl+C to stop.'
-
 class MyEventHandler(FileSystemEventHandler):
     def __init__(self, observer):
         self.observer = observer
+        dir = dirname(__file__)
+        configFileName = join(dir, r'cfg\filewatcher.cfg')
+        try:
+            configReady = False
+            #config = ConfigParser.SafeConfigParser()
+            #Forcing parser to reuse existing letter case
+            config = ConfigParser.RawConfigParser()
+            config.optionxform = lambda option: option
+            config.read(configFileName)
+            self.sourceDir = config.get('Common', 'SourceDir')
+            self.schedulerServiceAddress = config.get('Common', 'SchedulerWebAddress')
+            configReady = True
+
+        except Exception as e:
+            print e
+        #todo: check if path exists
+        print 'Monitorig started for path: {0}'.format(self.sourceDir)
+        print 'Ctrl+C to stop.'
 
     def on_any_event(self, event):
         s = requests.Session()
@@ -54,7 +53,7 @@ class MyEventHandler(FileSystemEventHandler):
             if not event.is_directory:
                 affectedFile = event.src_path.encode('utf-8')
                 print '{1} {0}'.format(event.event_type, affectedFile)
-        r = s.put(schedulerServiceAddress, params={'fileName': affectedFile})
+        r = s.put(self.schedulerServiceAddress, params={'fileName': affectedFile})
         print r.status_code, r.text
 
 def main():
@@ -65,7 +64,7 @@ def main():
     #event_handler = LoggingEventHandler()
     observer = Observer()
     event_handler = MyEventHandler(observer)
-    observer.schedule(event_handler, sourceDir, recursive=True)
+    observer.schedule(event_handler, event_handler.sourceDir, recursive=True)
     observer.start()
     i=0
     try:
