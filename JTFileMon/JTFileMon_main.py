@@ -72,7 +72,7 @@ def main():
             i+=1
             time.sleep(1)
             if i == 120:
-                print 'Monitoring {0}...'.format(sourceDir)
+                print 'Monitoring {0}...'.format(self.sourceDir)
                 i=0
     except KeyboardInterrupt:
         observer.stop()

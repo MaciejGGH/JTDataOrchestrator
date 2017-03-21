@@ -19,8 +19,8 @@ import ConfigParser
 
 class job():
     def __init__(self, line):
-        print line
-        print len(line)
+        ##print line
+        ##print len(line)
         jobId, executorName, name, description, groupId, statusId, type, expectedBy, maxRunTime, maxRetryCnt, maxThreads, updatedBy, updatedOn, version = line
         self.jobId=jobId.strip()
         self.executorName=executorName.strip()
@@ -37,6 +37,9 @@ class job():
         self.updatedOn=updatedOn.strip()
         self.version=version.strip()
 
+    def __str__(self):
+        return self.name
+
 class filematcher():
     def __init__(self, line):
         filematcherId, jobId, type, value = line
@@ -44,6 +47,8 @@ class filematcher():
         self.jobId=jobId
         self.type=type
         self.value=value
+    def __str__(self):
+        return 'jobId: {0}, type: {1}, value: {2}'.format(self.jobId, self.type, self.value)
 
 class JTSchedulerWebService(object):
     @cherrypy.tools.accept(media='text/plain')
@@ -69,26 +74,41 @@ class JTSchedulerWebService(object):
         except Exception as e:
             print e
 
-        try:
-            configReady = False
-            #config = ConfigParser.SafeConfigParser()
-            #Forcing parser to reuse existing letter case
-            config = ConfigParser.RawConfigParser()
-            config.optionxform = lambda option: option
-            config.read(configFileName)
-            ExecutorList = config.get('Common', 'ExecutorList').split(',')
-            for executorName in ExecutorList:
-                executorAddress = config.get('Executors', executorName)
-                executors[executorName] = executorAddress
+##        try:
+        configReady = False
+        #config = ConfigParser.SafeConfigParser()
+        #Forcing parser to reuse existing letter case
+        config = ConfigParser.RawConfigParser()
+        config.optionxform = lambda option: option
+        config.read(configFileName)
+        ExecutorList = config.get('Common', 'ExecutorList').split(',')
+        for executorName in ExecutorList:
+            executorAddress = config.get('Executors', executorName)
+            self.executors[executorName] = executorAddress
 
-            configReady = True
+        configReady = True
 
-        except Exception as e:
-            print e
+##        except Exception as e:
+##            print e
 
     def listRegistrations(self):
         return '<ul>' + ''.join('<li>{0}</li>'.format(f) for f in self.affectedFiles) + '</ul>'
     listRegistrations.exposed = True
+
+    def viewJobs(self):
+        print self.jobs
+        return '<ul>' + ''.join('<li>{0}</li>'.format(self.jobs[k]) for k in self.jobs) + '</ul>'
+    viewJobs.exposed = True
+
+    def viewFilematchers(self):
+        print self.filematchers
+        return '<ul>' + ''.join('<li>{0}</li>'.format(self.filematchers[k]) for k in self.filematchers) + '</ul>'
+    viewFilematchers.exposed = True
+
+    def viewExecutors(self):
+        print self.executors
+        return '<ul>' + ''.join('<li>{0}:{1}</li>'.format(k, self.executors[k]) for k in self.executors) + '</ul>'
+    viewExecutors.exposed = True
 
     def status(self):
         template_dir = join(dirname(__file__), 'templates')
@@ -130,7 +150,7 @@ if __name__ == '__main__':
     # On Startup
     current_dir = dirname(abspath(__file__)) + sep
     config = {
-        'global': {
+            'global': {
 ##            'environment': 'production',
             'log.screen': True,
             'server.socket_host': '127.0.0.1',
