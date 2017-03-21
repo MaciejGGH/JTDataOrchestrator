@@ -106,15 +106,15 @@ class JTSchedulerWebService(object):
 
 ##
 
-    def registerFile(self):
+    def registerFile(self, fileName):
 ##        #def PUT(self, fileName):
         def checkJobsToActivate(fileName):
             pass
-        print cherrypy.request.params##['fileName']
+        print cherrypy.request.params['fileName']
         self.affectedFiles += [fileName]
         # check filematchers for jobs to be activated
         # send notification to Executor if FM found
-        return 'fileName'
+        return fileName
     registerFile.exposed = True
 
 
@@ -143,6 +143,8 @@ if __name__ == '__main__':
             '/registerFile': {
                 #'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
                 'tools.sessions.on': True,
+                'tools.response_headers.on': True,
+                'tools.response_headers.headers': [('Content-Type', 'text/plain')],
         },
             '/css': {
                 'tools.staticdir.on': True,
