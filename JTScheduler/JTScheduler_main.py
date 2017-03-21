@@ -38,7 +38,7 @@ class job():
         self.version=version.strip()
 
     def __str__(self):
-        return self.name
+        return 'Job: {0}, running on: {1}'.format(self.name, self.executorName)
 
 class filematcher():
     def __init__(self, line):

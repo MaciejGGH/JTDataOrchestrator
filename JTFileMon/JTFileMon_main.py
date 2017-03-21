@@ -19,7 +19,7 @@ from watchdog.events import LoggingEventHandler, FileSystemEventHandler
 import ConfigParser
 from os.path import join, dirname
 
-class MyEventHandler(FileSystemEventHandler):
+class JTFileMon(FileSystemEventHandler):
     def __init__(self, observer):
         self.observer = observer
         dir = dirname(__file__)
@@ -63,7 +63,7 @@ def main():
     ##path = sys.argv[1] if len(sys.argv) > 1 else '.'
     #event_handler = LoggingEventHandler()
     observer = Observer()
-    event_handler = MyEventHandler(observer)
+    event_handler = JTFileMon(observer)
     observer.schedule(event_handler, event_handler.sourceDir, recursive=True)
     observer.start()
     i=0
@@ -72,7 +72,7 @@ def main():
             i+=1
             time.sleep(1)
             if i == 120:
-                print 'Monitoring {0}...'.format(self.sourceDir)
+                print 'Monitoring {0}...'.format(event_handler.sourceDir)
                 i=0
     except KeyboardInterrupt:
         observer.stop()
