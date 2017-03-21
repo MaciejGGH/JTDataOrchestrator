@@ -6,10 +6,10 @@
     <script type="text/javascript">
       $(document).ready(function() {
 
-        $("#refresh_log").click(function(e) {
+        $("#listRegistrations").click(function(e) {
           $.ajax({
             type: "POST",
-            url: "/"
+            url: "/listRegistrations"
           })
            .done(function(string) {
             $("#fileList").html(string);		  
@@ -17,17 +17,54 @@
           e.preventDefault();
 			});		
 		});
+
+        $("#listJobs").click(function(e) {
+          $.ajax({
+            type: "POST",
+            url: "/viewJobs"
+          })
+           .done(function(string) {
+            $("#jobList").html(string);		  
+		  console.log(string);
+          e.preventDefault();
+			});		
+		});		
+		
+        $("#listFileMatchers").click(function(e) {
+          $.ajax({
+            type: "POST",
+            url: "/viewFilematchers"
+          })
+           .done(function(string) {
+            $("#fmList").html(string);		  
+		  console.log(string);
+          e.preventDefault();
+			});		
+		});
+
+        $("#listExecutors").click(function(e) {
+          $.ajax({
+            type: "POST",
+            url: "/viewExecutors"
+          })
+           .done(function(string) {
+            $("#execList").html(string);		  
+		  console.log(string);
+          e.preventDefault();
+			});		
+		});		
+		
       });
     </script>
   </head>
   <body>
-      <button id="refresh_log">Refresh</button>
-	  <div id="fileList">
-		<ul>
-			{% for file in affectedFiles %}
-			<li>{{ file }}</li>
-			{% endfor %}
-		</ul>
-	  </div>
-  </body>
+      <button id="listRegistrations">List received files</button>
+	  <div id="fileList"></div>
+      <button id="listJobs">List registered Jobs</button>
+	  <div id="jobList"></div>
+      <button id="listFileMatchers">List registered FileMatchers</button>
+	  <div id="fmList"></div>	  
+      <button id="listExecutors">List registered Executors</button>
+	  <div id="execList"></div>	  
+	  </body>
 </html>
