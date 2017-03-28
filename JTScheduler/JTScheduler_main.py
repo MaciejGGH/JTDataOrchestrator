@@ -18,35 +18,31 @@ import ConfigParser
 
 
 class job():
-    def __init__(self, line):
-        ##print line
-        ##print len(line)
-        jobId, executorName, name, description, groupId, statusId, type, expectedBy, maxRunTime, maxRetryCnt, maxThreads, updatedBy, updatedOn, version = line
-        self.jobId=jobId.strip()
-        self.executorName=executorName.strip()
-        self.name=name.strip()
-        self.description=description
-        self.groupId=groupId.strip()
-        self.statusId=statusId.strip()
-        self.type=type.strip()
-        self.expectedBy=expectedBy.strip()
-        self.maxRunTime=maxRunTime.strip()
-        self.maxRetryCnt=maxRetryCnt.strip()
-        self.maxThreads=maxThreads.strip()
-        self.updatedBy=updatedBy.strip()
-        self.updatedOn=updatedOn.strip()
-        self.version=version.strip()
+    def __init__(self, jobId, executorName, name, description, groupId, statusId, type, expectedBy, maxRunTime, maxRetryCnt, maxThreads, updatedBy, updatedOn, version):
+        self.jobId = jobId.strip()
+        self.executorName = executorName.strip()
+        self.name = name.strip()
+        self.description = description
+        self.groupId = groupId.strip()
+        self.statusId = statusId.strip()
+        self.type = type.strip()
+        self.expectedBy = expectedBy.strip()
+        self.maxRunTime = maxRunTime.strip()
+        self.maxRetryCnt = maxRetryCnt.strip()
+        self.maxThreads = maxThreads.strip()
+        self.updatedBy = updatedBy.strip()
+        self.updatedOn = updatedOn.strip()
+        self.version = version.strip()
 
     def __str__(self):
         return 'Job: {0}, running on: {1}'.format(self.name, self.executorName)
 
 class filematcher():
-    def __init__(self, line):
-        filematcherId, jobId, type, value = line
-        self.filematcherId=filematcherId
-        self.jobId=jobId
-        self.type=type
-        self.value=value
+    def __init__(self, filematcherId, jobId, type, value):
+        self.filematcherId = filematcherId.strip()
+        self.jobId = jobId.strip()
+        self.type = type.strip()
+        self.value = value.strip()
     def __str__(self):
         return 'jobId: {0}, type: {1}, value: {2}'.format(self.jobId, self.type, self.value)
 
@@ -54,30 +50,19 @@ class JTSchedulerWebService(object):
     @cherrypy.tools.accept(media='text/plain')
 
     def __init__(self):
-        self.executors={}
-        self.affectedFiles=[] #list of files coming from FileMatchers
-        self.jobs={}
-        self.filematchers={}
+        self.executors = {}
+        self.affectedFiles = [] #list of files coming from FileMatchers
+        self.jobs = {}
+        self.filematchers = {}
         # get config
+        self.registerJobs()
+        self.registerFileMatchers()
+        self.registerExecutors()
+        self.filematcherseparator = ';'
+
+    def registerExecutors(self):
         dir = dirname(__file__)
         configFileName = join(dir, r'cfg\scheduler.cfg')
-        for jobLine in  open(join(dir, r'job_config\jobs.cfg'), 'r').readlines()[1:]:
-            self.jobs[jobLine.split(',')[0]] = job(jobLine.replace('\n', '').split(','))
-        for jobLine in open(join(dir, r'job_config\filematchers.cfg'), 'r').readlines()[1:]:
-            self.filematchers[jobLine.split(',')[0]] = filematcher(jobLine.replace('\n', '').split(','))
-
-        # fetch filematchers
-        try:
-            fm = open(join(dir, r'job_config\filematchers.csv'), 'r').readlines()
-            for line in fm:
-                filematcherId, jobId, type, value = line.split(',')
-        except Exception as e:
-            print e
-
-##        try:
-        configReady = False
-        #config = ConfigParser.SafeConfigParser()
-        #Forcing parser to reuse existing letter case
         config = ConfigParser.RawConfigParser()
         config.optionxform = lambda option: option
         config.read(configFileName)
@@ -85,11 +70,25 @@ class JTSchedulerWebService(object):
         for executorName in ExecutorList:
             executorAddress = config.get('Executors', executorName)
             self.executors[executorName] = executorAddress
+    registerExecutors.exposed = True
 
-        configReady = True
+    def registerJobs(self):
+        dir = dirname(__file__)
+        for jobLine in open(join(dir, r'job_config\jobs.cfg'), 'r').readlines()[1:]:
+            jobId, executorName, name, description, groupId, statusId, type, expectedBy, maxRunTime, maxRetryCnt, maxThreads, updatedBy, updatedOn, version = jobLine.replace('\n', '').split(',')
+            self.jobs[jobId.strip()] = job(jobId, executorName, name, description, groupId, statusId, type, expectedBy, maxRunTime, maxRetryCnt, maxThreads, updatedBy, updatedOn, version)
+    registerJobs.exposed = True
 
-##        except Exception as e:
-##            print e
+    def registerFileMatchers(self):
+        dir = dirname(__file__)
+        for fmLine in open(join(dir, r'job_config\filematchers.cfg'), 'r').readlines()[1:]:
+            filematcherId, jobId, type, value = fmLine.replace('\n', '').split(',')
+            newFM = filematcher(filematcherId, jobId, type, value)
+            try:
+                self.filematchers[jobId.strip()] += [newFM]
+            except:
+                self.filematchers[jobId.strip()] = [newFM]
+    registerFileMatchers.exposed = True
 
     def listRegistrations(self):
         return '<ul>' + ''.join('<li>{0}</li>'.format(f) for f in self.affectedFiles) + '</ul>'
@@ -101,8 +100,14 @@ class JTSchedulerWebService(object):
     viewJobs.exposed = True
 
     def viewFilematchers(self):
-        print self.filematchers
-        return '<ul>' + ''.join('<li>{0}</li>'.format(self.filematchers[k]) for k in self.filematchers) + '</ul>'
+        fmList = '<ul>'
+        for jobId in self.filematchers:
+            print '>{0}<'.format(jobId.strip())
+            fmList += '<li>{0}</li>'.format(self.jobs[jobId].name)
+            fmList += '<ul>' + ''.join('<li>{0}</li>'.format(fm) for fm in self.filematchers[jobId]) + '</ul>'
+        fmList += '</ul>'
+        return fmList
+        #return '<ul>' + ''.join('<li>{0}</li>'.format(self.filematchers[jobId]) for jobId in self.filematchers) + '</ul>'
     viewFilematchers.exposed = True
 
     def viewExecutors(self):
@@ -117,26 +122,65 @@ class JTSchedulerWebService(object):
         return template.render(affectedFiles = self.affectedFiles)
     status.exposed = True
 
-##    def POST(self):
-##        self.affectedFiles
-##        print '='*150
-##        # return affectedFiles
-##        li = ''.join('<li>{0}</li>'.format(f) for f in self.affectedFiles)
-##        return '<ul>{0}</ul>'.format(li)
+    def registerFile(self, fileName, testMode = 0):
+        def checkJobsToRun(fileName):
+            jobsToRun = []
+            for jobId in self.filematchers:
+                activateJob = True
+                for fm in self.filematchers[jobId]:
+                    #print fm
+                    if fm.type == 'FS':
+                        if fileName[:len(fm.value)] != fm.value: activateJob = False
+                    elif fm.type == 'FE':
+                        if fileName[-1*len(fm.value):] != fm.value: activateJob = False
+                    elif fm.type == 'FM':
+                        if fileName != fm.value: activateJob = False
+                    elif fm.type == 'FSL':
+                        matchFound = False
+                        for val in fm.value.split(self.filematcherseparator):
+                            if fileName[:len(val)] == val: matchFound = True
+                        if not matchFound: activateJob = False
+                    elif fm.type == 'FEL':
+                        matchFound = False
+                        for val in fm.value.split(self.filematcherseparator):
+                            if fileName[-1*len(val):] == val: matchFound = True
+                        if not matchFound: activateJob = False
+                    elif fm.type == 'FML':
+                        matchFound = False
+                        for val in fm.value.split(self.filematcherseparator):
+                            if fileName == val: matchFound = True
+                        if not matchFound: activateJob = False
+                if activateJob:
+                    jobsToRun += [jobId]
+            return jobsToRun
 
-##
-
-    def registerFile(self, fileName):
-##        #def PUT(self, fileName):
-        def checkJobsToActivate(fileName):
-            pass
-        print cherrypy.request.params['fileName']
         self.affectedFiles += [fileName]
+        print cherrypy.request.params['fileName']
+
+        jobsToRun = checkJobsToRun(fileName)
+        if testMode:
+            li = ''.join('<li>{0}</li>'.format(self.jobs[jobId]) for jobId in jobsToRun)
+            return '<ul>{0}</ul>'.format(li)
+        else:
+            #TODO: rum the jobs
+            # check filematchers for jobs to be activated
+            # send notification to Executor if FM found
+            return fileName
+
+
         # check filematchers for jobs to be activated
         # send notification to Executor if FM found
         return fileName
     registerFile.exposed = True
 
+    def requestCheck(self):
+##        #def PUT(self, fileName):
+        # check filematchers for jobs to be activated
+        # send notification to Executor if FM found
+        s = cherrypy.request.headers
+        print s
+        return ''.join(k + ': ' + s[k] + '<br>' for k in s)
+    requestCheck.exposed = True
 
 ##    def DELETE(self):
 ##        cherrypy.session.pop('mystring', None)
@@ -164,7 +208,7 @@ if __name__ == '__main__':
                 #'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
                 'tools.sessions.on': True,
                 'tools.response_headers.on': True,
-                'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+                #'tools.response_headers.headers': [('Content-Type', 'text/plain')],
         },
             '/css': {
                 'tools.staticdir.on': True,
